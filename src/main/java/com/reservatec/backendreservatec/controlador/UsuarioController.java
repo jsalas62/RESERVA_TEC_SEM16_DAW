@@ -19,6 +19,12 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
+
+    @GetMapping("/home")
+    public String homePage() {
+        return "home";  // Nombre de la vista success.html
+    }
+
     @GetMapping("/user/form")
     public String getUserForm(OAuth2AuthenticationToken token, Model model, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -31,7 +37,7 @@ public class UsuarioController {
         // Verificar si el usuario ya existe en la base de datos
         Usuario existingUser = usuarioService.findByEmail(email);
         if (existingUser != null) {
-            return "redirect:/user/alreadyExists";  // Redirigir a una página que indica que el usuario ya existe
+            return "redirect:/home";  // Redirigir a una página que indica que el usuario ya existe
         }
 
         String name = (String) attributes.get("name");
@@ -53,11 +59,6 @@ public class UsuarioController {
     @GetMapping("/success")
     public String successPage() {
         return "success";  // Nombre de la vista success.html
-    }
-
-    @GetMapping("/user/alreadyExists")
-    public String userAlreadyExistsPage() {
-        return "userAlreadyExists";  // Nombre de la vista userAlreadyExists.html
     }
 
     @GetMapping("/user/profile")
