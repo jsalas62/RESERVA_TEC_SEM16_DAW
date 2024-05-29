@@ -1,6 +1,7 @@
 package com.reservatec.backendreservatec.controlador;
 
 import com.reservatec.backendreservatec.modelo.Usuario;
+import com.reservatec.backendreservatec.servicio.CarreraService;
 import com.reservatec.backendreservatec.servicio.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -8,8 +9,8 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 
 import java.util.Map;
 
@@ -19,70 +20,79 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
+    @Autowired
+    private CarreraService carreraService;
 
     @GetMapping("/home")
     public String homePage() {
-        return "home";  // Nombre de la vista success.html
+        return "home";
     }
 
     @GetMapping("/user/form")
     public String getUserForm(OAuth2AuthenticationToken token, Model model, Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return "redirect:/login";  // Redirigir a la página de inicio de sesión si no está autenticado
+        if (!isAuthenticated(authentication)) {
+            return "redirect:/login";
         }
 
-        Map<String, Object> attributes = token.getPrincipal().getAttributes();
-        String email = (String) attributes.get("email");
-
-        // Verificar si el usuario ya existe en la base de datos
-        Usuario existingUser = usuarioService.findByEmail(email);
-        if (existingUser != null) {
-            return "redirect:/home";  // Redirigir a una página que indica que el usuario ya existe
+        Usuario usuario = ensureUser(token);
+        if (usuario == null) {
+            usuario = createUserFromToken(token);
+            model.addAttribute("usuario", usuario);
+            model.addAttribute("carreras", carreraService.findAllCarreras());
+            return "userForm";
         }
 
-        String name = (String) attributes.get("name");
+        return "redirect:/home";
+    }
 
-        Usuario usuario = new Usuario();
-        usuario.setEmail(email);
-        usuario.setNombres(name);
+    @GetMapping("/user/profile")
+    public String getProfileForm(OAuth2AuthenticationToken token, Model model, Authentication authentication) {
+        if (!isAuthenticated(authentication)) {
+            return "redirect:/login";
+        }
+
+        Usuario usuario = ensureUser(token);
+        if (usuario == null) {
+            return "redirect:/user/form";
+        }
 
         model.addAttribute("usuario", usuario);
-        return "userForm";  // Esta es la vista del formulario HTML
+        model.addAttribute("carreras", carreraService.findAllCarreras());
+        return "profile";
     }
 
     @PostMapping("/user/form")
     public String submitUserForm(@ModelAttribute Usuario usuario) {
         usuarioService.saveUsuario(usuario);
-        return "redirect:/success";  // Redirige a la página de éxito después de guardar
+        return "redirect:/success";
     }
 
     @GetMapping("/success")
     public String successPage() {
-        return "success";  // Nombre de la vista success.html
-    }
-
-    @GetMapping("/user/profile")
-    public String getProfileForm(OAuth2AuthenticationToken token, Model model, Authentication authentication) {
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return "redirect:/login";  // Redirigir a la página de inicio de sesión si no está autenticado
-        }
-
-        Map<String, Object> attributes = token.getPrincipal().getAttributes();
-        String email = (String) attributes.get("email");
-
-        // Obtener el usuario de la base de datos
-        Usuario usuario = usuarioService.findByEmail(email);
-        if (usuario == null) {
-            return "redirect:/user/form";  // Redirigir al formulario de registro si el usuario no existe
-        }
-
-        model.addAttribute("usuario", usuario);
-        return "profile";  // Esta es la vista del perfil HTML
+        return "success";
     }
 
     @PostMapping("/user/profile")
     public String updateProfile(@ModelAttribute Usuario usuario) {
         usuarioService.updateUsuario(usuario);
-        return "redirect:/user/profile?success";  // Redirige a la página de perfil después de actualizar
+        return "redirect:/user/profile?success";
+    }
+
+    private boolean isAuthenticated(Authentication authentication) {
+        return authentication != null && authentication.isAuthenticated();
+    }
+
+    private Usuario ensureUser(OAuth2AuthenticationToken token) {
+        Map<String, Object> attributes = token.getPrincipal().getAttributes();
+        String email = (String) attributes.get("email");
+        return usuarioService.findByEmail(email);
+    }
+
+    private Usuario createUserFromToken(OAuth2AuthenticationToken token) {
+        Map<String, Object> attributes = token.getPrincipal().getAttributes();
+        Usuario usuario = new Usuario();
+        usuario.setEmail((String) attributes.get("email"));
+        usuario.setNombres((String) attributes.get("name"));
+        return usuario;
     }
 }

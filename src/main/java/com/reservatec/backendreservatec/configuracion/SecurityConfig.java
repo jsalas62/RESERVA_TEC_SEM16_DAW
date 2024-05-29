@@ -25,7 +25,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/").permitAll();
                     auth.requestMatchers("/login").anonymous();  // Permitir acceso a /login solo si no está autenticado
-                    auth.requestMatchers("/user/form", "/user/profile", "/user/alreadyExists").authenticated();  // Solo usuarios autenticados pueden acceder a estas rutas
+                    auth.requestMatchers("/user/form", "/user/profile").authenticated();  // Solo usuarios autenticados pueden acceder a estas rutas
                     auth.anyRequest().authenticated();
                 })
                 .sessionManagement(session -> session

@@ -30,4 +30,8 @@ public class Usuario {
     @ManyToOne
     @JoinColumn(name = "fk_id_estado", nullable = false)
     private Estado estado;
+
+    @ManyToOne
+    @JoinColumn(name = "fk_id_carrera") // Esta columna no tiene la restricción de nullabilidad por ahora
+    private Carrera carrera;
 }

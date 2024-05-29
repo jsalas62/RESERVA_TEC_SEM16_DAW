@@ -5,7 +5,7 @@
 </head>
 <body>
 <h1>User Profile</h1>
-<form action="#" th:action="@{/user/profile}" th:object="${usuario}" method="post">
+<form th:action="@{/user/profile}" th:object="${usuario}" method="post">
     <div>
         <label for="nombres">Name:</label>
         <input type="text" id="nombres" th:field="*{nombres}" readonly />
@@ -17,6 +17,13 @@
     <div>
         <label for="codigoTecsup">Tecsup Code:</label>
         <input type="text" id="codigoTecsup" th:field="*{codigoTecsup}" required />
+    </div>
+    <div>
+        <label for="carrera">Carrera:</label>
+        <select id="carrera" th:field="*{carrera.id}">
+            <option value="">Select a Career</option>
+            <option th:each="carrera : ${carreras}" th:value="${carrera.id}" th:text="${carrera.nombre}"></option>
+        </select>
     </div>
     <div>
         <button type="submit">Update</button>
