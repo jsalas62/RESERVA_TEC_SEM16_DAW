@@ -27,7 +27,7 @@ public class UsuarioService {
                 usuario.setEstado(estadoRepository.findById(1L).orElse(null));
             }
             if (usuario.getRol() == null) {
-                usuario.setRol(rolRepository.findById(2L).orElse(null));
+                usuario.setRol(rolRepository.findById(1L).orElse(null));
             }
             if (usuario.getCarrera() != null && usuario.getCarrera().getId() != null) {
                 Carrera carrera = carreraRepository.findById(usuario.getCarrera().getId())

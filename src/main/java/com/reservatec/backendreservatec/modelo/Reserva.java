@@ -21,7 +21,7 @@ public class Reserva {
     private Usuario usuario;
 
     @ManyToOne
-    @JoinColumn(name = "fk_id_campo")
+    @JoinColumn(name = "fk_id_campo", nullable = false)
     private Campo campo;
 
     @Column(nullable = false)

@@ -32,6 +32,6 @@ public class Usuario {
     private Estado estado;
 
     @ManyToOne
-    @JoinColumn(name = "fk_id_carrera") // Esta columna no tiene la restricción de nullabilidad por ahora
+    @JoinColumn(name = "fk_id_carrera")
     private Carrera carrera;
 }

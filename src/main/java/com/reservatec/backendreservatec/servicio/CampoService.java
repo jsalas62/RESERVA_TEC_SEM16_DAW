@@ -16,8 +16,4 @@ public class CampoService {
     public List<Campo> findAllCampos() {
         return campoRepository.findAll();
     }
-
-    public Campo saveCampo(Campo campo) {
-        return campoRepository.save(campo);
-    }
 }

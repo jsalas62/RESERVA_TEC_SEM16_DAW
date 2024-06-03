@@ -14,9 +14,9 @@ public class Estado {
     @Column(name = "pk_id_estado")
     private Long id;
 
-    @Column(name = "nombre", nullable = false)
+    @Column(nullable = false)
     private String nombre;
 
-    @Column(name = "descripcion")
+    @Column
     private String descripcion;
 }

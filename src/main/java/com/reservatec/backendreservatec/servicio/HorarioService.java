@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+
 @Service
 public class HorarioService {
 
@@ -14,9 +15,5 @@ public class HorarioService {
 
     public List<Horario> findAllHorarios() {
         return horarioRepository.findAll();
-    }
-
-    public Horario saveHorario(Horario horario) {
-        return horarioRepository.save(horario);
     }
 }
