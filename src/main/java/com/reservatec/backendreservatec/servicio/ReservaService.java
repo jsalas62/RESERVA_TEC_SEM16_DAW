@@ -9,6 +9,7 @@ import com.reservatec.backendreservatec.repositorio.EstadoRepository;
 import com.reservatec.backendreservatec.repositorio.HorarioRepository;
 import com.reservatec.backendreservatec.repositorio.ReservaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -56,7 +57,7 @@ public class ReservaService {
 
         // Validar que la hora de reserva es en el futuro solo si la fecha es hoy
         if (reserva.getFecha().isEqual(today)) {
-            if (horario.getHoraInicio() == null || horario.getHoraInicio().isBefore(currentTime)) {
+            if (horario.getHoraInicio().isBefore(currentTime)) {
                 throw new Exception("No se puede reservar en horas pasadas si la reserva es para hoy.");
             }
         }
@@ -83,6 +84,12 @@ public class ReservaService {
             }
         }
 
+        // Validar que el usuario no tiene una reserva activa
+        List<Reserva> reservasActivas = reservaRepository.findByUsuarioIdAndEstadoNombre(reserva.getUsuario().getId(), "Activo");
+        if (!reservasActivas.isEmpty()) {
+            throw new Exception("El usuario no puede realizar una nueva reserva mientras tenga una reserva activa.");
+        }
+
         // Asignar estado por defecto
         Estado estadoActivo = estadoRepository.findById(1L).orElseThrow(() -> new Exception("Estado activo no encontrado"));
         reserva.setEstado(estadoActivo);
@@ -92,5 +99,41 @@ public class ReservaService {
 
     public List<Reserva> findReservasByUsuario(Long usuarioId) {
         return reservaRepository.findByUsuarioId(usuarioId);
+    }
+
+    @Scheduled(cron = "0 * * * * *") // Ejecutar cada minuto
+    public void actualizarReservas() {
+        List<Reserva> reservasActivas = reservaRepository.findByEstadoNombre("Activo");
+        Estado estadoCompletada = estadoRepository.findById(3L).orElse(null);
+
+        if (estadoCompletada != null) {
+            for (Reserva reserva : reservasActivas) {
+                LocalDateTime now = LocalDateTime.now();
+                if (reserva.getFecha().isBefore(now.toLocalDate()) ||
+                        (reserva.getFecha().isEqual(now.toLocalDate()) && reserva.getHorario().getHoraFin().isBefore(now.toLocalTime()))) {
+                    reserva.setEstado(estadoCompletada);
+                    reservaRepository.save(reserva);
+                }
+            }
+        }
+    }
+
+    public void completarReserva(Long reservaId) throws Exception {
+        Reserva reserva = reservaRepository.findById(reservaId)
+                .orElseThrow(() -> new Exception("Reserva no encontrada"));
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDate today = now.toLocalDate();
+        LocalTime currentTime = now.toLocalTime();
+
+        if (!reserva.getFecha().isEqual(today) || reserva.getHorario().getHoraFin().isAfter(currentTime)) {
+            throw new Exception("La reserva no puede completarse antes de su finalización.");
+        }
+
+        Estado estadoCompletada = estadoRepository.findById(3L)
+                .orElseThrow(() -> new Exception("Estado completado no encontrado"));
+        reserva.setEstado(estadoCompletada);
+
+        reservaRepository.save(reserva);
     }
 }
