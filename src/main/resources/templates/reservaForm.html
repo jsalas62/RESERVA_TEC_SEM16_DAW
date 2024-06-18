@@ -14,6 +14,7 @@
                 <option value="" disabled selected>Seleccione un campo</option>
                 <option th:each="campo : ${campos}" th:value="${campo.id}" th:text="${campo.nombre}"></option>
             </select>
+
         </div>
         <div class="form-group">
             <label for="horario">Horario:</label>
@@ -21,6 +22,7 @@
                 <option value="" disabled selected>Seleccione un horario</option>
                 <option th:each="horario : ${horarios}" th:value="${horario.id}" th:text="${horario.horaInicio} + ' - ' + ${horario.horaFin}"></option>
             </select>
+
         </div>
         <div class="form-group">
             <label for="fecha">Fecha:</label>
