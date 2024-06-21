@@ -60,6 +60,11 @@ public class UsuarioServiceImpl implements UsuarioService {
         updateExistingUser(existingUser, usuario);
     }
 
+    @Override
+    public boolean existsByEmail(String email) {
+        return usuarioRepository.existsByEmail(email);
+    }
+
     private void validateAndSetDefaults(Usuario usuario) {
         if (usuario.getCodigoTecsup() == null) {
             throw new IllegalArgumentException("El código Tecsup no puede ser nulo.");

@@ -8,4 +8,6 @@ public interface UsuarioService {
     void saveUsuario(Usuario usuario);
     Optional<Usuario> findByEmail(String email);
     void updateUsuario(Usuario usuario);
+
+    boolean existsByEmail(String email);
 }
