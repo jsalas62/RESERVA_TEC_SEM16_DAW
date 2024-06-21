@@ -61,7 +61,7 @@ public class UsuarioController {
 
         Optional<UsuarioTO> usuarioTO = authenticationService.getUserFromToken(token);
         if (usuarioTO.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.FOUND).header("Location", "/api/user/form").build();
+            return ResponseEntity.status(HttpStatus.FOUND).header("Location", "/api/user/register").build();
         }
 
         return ResponseEntity.ok(usuarioTO.get());
