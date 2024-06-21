@@ -25,7 +25,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // Actualiza el URL del manejador de éxito de autenticación
-        SimpleUrlAuthenticationSuccessHandler successHandler = new SimpleUrlAuthenticationSuccessHandler("https://balanced-delight-production.up.railway.app/api/user/home");
+        SimpleUrlAuthenticationSuccessHandler successHandler = new SimpleUrlAuthenticationSuccessHandler("/api/user/login");
 
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Configurar CORS
