@@ -25,7 +25,7 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // Actualiza el URL del manejador de éxito de autenticación
-        SimpleUrlAuthenticationSuccessHandler successHandler = new SimpleUrlAuthenticationSuccessHandler("https://balanced-delight-production.up.railway.app/api/user/register");
+        SimpleUrlAuthenticationSuccessHandler successHandler = new SimpleUrlAuthenticationSuccessHandler("https://balanced-delight-production.up.railway.app/api/user/home");
 
         return http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Configurar CORS
@@ -35,6 +35,7 @@ public class SecurityConfig {
                     auth.requestMatchers("/login").anonymous();  // Permitir acceso a /login solo si no está autenticado
                     // Solo usuarios autenticados pueden acceder a las rutas de la API
                     auth.requestMatchers("/api/user/**").authenticated();
+                    auth.requestMatchers("/api/user/home").authenticated();
                     auth.anyRequest().authenticated(); // Todos los demás endpoints requieren autenticación
                 })
                 .sessionManagement(session -> session

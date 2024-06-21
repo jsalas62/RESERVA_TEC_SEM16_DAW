@@ -34,7 +34,10 @@ public class UsuarioController {
     }
 
     @GetMapping("/home")
-    public ResponseEntity<String> homePage() {
+    public ResponseEntity<String> homePage(Authentication authentication) {
+        if (!authenticationService.isAuthenticated(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No estás autorizado para acceder a esta página.");
+        }
         return ResponseEntity.ok("Welcome to the Home Page");
     }
 
