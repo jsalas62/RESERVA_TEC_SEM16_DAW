@@ -67,7 +67,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioTO.get());
     }
 
-    @PostMapping("/form")
+    @PostMapping("/register")
     public ResponseEntity<UsuarioTO> submitUserForm(@RequestBody UsuarioTO usuarioTO) {
         // Log para depuración
         System.out.println("Datos recibidos del usuario: " + usuarioTO);
