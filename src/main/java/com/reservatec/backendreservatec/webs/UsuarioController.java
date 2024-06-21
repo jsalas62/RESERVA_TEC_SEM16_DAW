@@ -1,110 +1,105 @@
 package com.reservatec.backendreservatec.webs;
 
 import com.reservatec.backendreservatec.domains.UsuarioTO;
+import com.reservatec.backendreservatec.entities.Carrera;
 import com.reservatec.backendreservatec.entities.Usuario;
-import com.reservatec.backendreservatec.mappers.UsuarioMapper;
+import com.reservatec.backendreservatec.services.AuthenticationService;
 import com.reservatec.backendreservatec.services.CarreraService;
 import com.reservatec.backendreservatec.services.UsuarioService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
+import java.util.List;
+import java.util.Optional;
 
-@Controller
+@RestController // Usamos RestController para que devuelva JSON
+@RequestMapping("/api/user")
 public class UsuarioController {
 
-    private final UsuarioService usuarioService;
+    private final AuthenticationService authenticationService;
     private final CarreraService carreraService;
-    private final UsuarioMapper usuarioMapper;
+    private final UsuarioService usuarioService;
 
-    // Constructor con inyección de dependencias
-    public UsuarioController(UsuarioService usuarioService,
+    @Autowired
+    public UsuarioController(AuthenticationService authenticationService,
                              CarreraService carreraService,
-                             UsuarioMapper usuarioMapper) {
-        this.usuarioService = usuarioService;
+                             UsuarioService usuarioService) {
+        this.authenticationService = authenticationService;
         this.carreraService = carreraService;
-        this.usuarioMapper = usuarioMapper;
+        this.usuarioService = usuarioService;
     }
 
     @GetMapping("/home")
-    public String homePage() {
-        return "home";
+    public ResponseEntity<String> homePage() {
+        return ResponseEntity.ok("Welcome to the Home Page");
     }
 
-    @GetMapping("/user/form")
-    public String getUserForm(OAuth2AuthenticationToken token, Model model, Authentication authentication) {
-        if (!isAuthenticated(authentication)) {
-            return "redirect:/login";
+    @GetMapping("/form")
+    public ResponseEntity<UsuarioTO> getUserForm(OAuth2AuthenticationToken token, Authentication authentication) {
+        if (!authenticationService.isAuthenticated(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        UsuarioTO usuarioTO = ensureUser(token);
-        if (usuarioTO == null) {
-            usuarioTO = createUserFromToken(token);
-            model.addAttribute("usuario", usuarioTO);
-            model.addAttribute("carreras", carreraService.findAllCarreras());
-            return "userForm";
+        Optional<UsuarioTO> usuarioTO = authenticationService.getUserFromToken(token);
+        if (usuarioTO.isEmpty()) {
+            UsuarioTO newUsuarioTO = authenticationService.createUserFromToken(token);
+            return ResponseEntity.ok(newUsuarioTO);
         }
 
-        return "redirect:/home";
+        return ResponseEntity.status(HttpStatus.FOUND).header("Location", "/api/user/home").build();
     }
 
-    @GetMapping("/user/profile")
-    public String getProfileForm(OAuth2AuthenticationToken token, Model model, Authentication authentication) {
-        if (!isAuthenticated(authentication)) {
-            return "redirect:/login";
+    @GetMapping("/profile")
+    public ResponseEntity<UsuarioTO> getProfileForm(OAuth2AuthenticationToken token, Authentication authentication) {
+        if (!authenticationService.isAuthenticated(authentication)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        UsuarioTO usuarioTO = ensureUser(token);
-        if (usuarioTO == null) {
-            return "redirect:/user/form";
+        Optional<UsuarioTO> usuarioTO = authenticationService.getUserFromToken(token);
+        if (usuarioTO.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.FOUND).header("Location", "/api/user/form").build();
         }
 
-        model.addAttribute("usuario", usuarioTO);
-        model.addAttribute("carreras", carreraService.findAllCarreras());
-        return "profile";
+        return ResponseEntity.ok(usuarioTO.get());
     }
 
-    @PostMapping("/user/form")
-    public String submitUserForm(@ModelAttribute UsuarioTO usuarioTO) {
-        Usuario usuario = usuarioMapper.toEntity(usuarioTO);
-        usuarioService.saveUsuario(usuario);
-        return "redirect:/success";
+    @PostMapping("/form")
+    public ResponseEntity<UsuarioTO> submitUserForm(@RequestBody UsuarioTO usuarioTO) {
+        // Log para depuración
+        System.out.println("Datos recibidos del usuario: " + usuarioTO);
+
+        try {
+            // Convertir DTO a entidad y guardar
+            Usuario usuario = authenticationService.convertToEntity(usuarioTO);
+            usuarioService.saveUsuario(usuario);
+
+            // Log para depuración
+            System.out.println("Usuario guardado con éxito: " + usuario);
+
+            // Devolver respuesta con estado 201 (CREATED)
+            return ResponseEntity.status(HttpStatus.CREATED).body(usuarioTO);
+        } catch (Exception e) {
+            // Manejar cualquier error que ocurra durante el proceso
+            System.err.println("Error al guardar usuario: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
-    @GetMapping("/success")
-    public String successPage() {
-        return "success";
+    @PutMapping("/profile")
+    public ResponseEntity<UsuarioTO> updateProfile(@RequestBody UsuarioTO usuarioTO) {
+        usuarioService.updateUsuario(authenticationService.convertToEntity(usuarioTO));
+        return ResponseEntity.ok(usuarioTO);
     }
 
-    @PostMapping("/user/profile")
-    public String updateProfile(@ModelAttribute UsuarioTO usuarioTO) {
-        Usuario usuario = usuarioMapper.toEntity(usuarioTO);
-        usuarioService.updateUsuario(usuario);
-        return "redirect:/user/profile?success";
-    }
 
-    private boolean isAuthenticated(Authentication authentication) {
-        return authentication != null && authentication.isAuthenticated();
-    }
-
-    private UsuarioTO ensureUser(OAuth2AuthenticationToken token) {
-        Map<String, Object> attributes = token.getPrincipal().getAttributes();
-        String email = (String) attributes.get("email");
-        return usuarioService.findByEmail(email)
-                .map(usuarioMapper::toTO)
-                .orElse(null);
-    }
-
-    private UsuarioTO createUserFromToken(OAuth2AuthenticationToken token) {
-        Map<String, Object> attributes = token.getPrincipal().getAttributes();
-        UsuarioTO usuarioTO = new UsuarioTO();
-        usuarioTO.setEmail((String) attributes.get("email"));
-        usuarioTO.setNombres((String) attributes.get("name"));
-        return usuarioTO;
+    // Nuevo endpoint para obtener la lista de carreras
+    @GetMapping("/carreras")
+    public ResponseEntity<List<Carrera>> getCarreras() {
+        List<Carrera> carreras = carreraService.findAllCarreras();
+        return ResponseEntity.ok(carreras);
     }
 }
